@@ -1,3 +1,4 @@
+![CI](https://github.com/hibasomrani/finapi-finsentiment/actions/workflows/ci.yml/badge.svg)
 # finapi — API Flask pour cours boursiers
 
 API REST Python/Flask qui expose des cours boursiers et news via yfinance + SQLite.
