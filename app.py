@@ -105,9 +105,31 @@ def create_app() -> Flask:
                     "title": r.title,
                     "publisher": r.publisher,
                     "url": r.url,
+                    "sentiment_label": r.sentiment_label,
+                    "sentiment_score": r.sentiment_score,
                 }
                 for r in rows
             ],
+        })
+
+    @app.get("/db/stats")
+    def db_stats():
+        """Renvoie des statistiques globales sur la base."""
+        with SessionLocal() as session:
+            from sqlalchemy import func
+            prices_count = session.query(PriceRecord).count()
+            news_count = session.query(NewsItem).count()
+            news_enriched = session.query(NewsItem).filter(
+                NewsItem.sentiment_label.isnot(None)
+            ).count()
+            tickers = [
+                r[0] for r in session.query(NewsItem.ticker).distinct().all()
+            ]
+        return jsonify({
+            "prices_count": prices_count,
+            "news_count": news_count,
+            "news_enriched": news_enriched,
+            "tickers": tickers,
         })
 
     @app.post("/sentiment")
