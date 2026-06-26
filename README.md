@@ -67,3 +67,17 @@ curl http://localhost:5000/db/news/AAPL
 
 ## Auteur
 Somra — 
+
+## Dashboard
+
+Lancer l'API Flask dans un terminal :
+```bash
+python app.py
+```
+
+Lancer le dashboard dans un second terminal :
+```bash
+streamlit run dashboard\app.py
+```
+
+Le dashboard s'ouvre sur http://localhost:8501
