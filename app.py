@@ -3,6 +3,12 @@ def bootstrap_data():
     init_db()
     with SessionLocal() as session:
         if session.query(PriceRecord).count() > 0:
+            # DB has data, just run sentiment enrichment
+            try:
+                from scripts.enrich_sentiment import main as enrich
+                enrich()
+            except Exception as e:
+                print(f"Enrich failed: {e}")
             return
     print("DB vide, lancement bootstrap ETL...")
     try:
