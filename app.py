@@ -2,11 +2,13 @@ def bootstrap_data():
     """Si la DB est vide, lancer un mini ETL au demarrage."""
     init_db()
     with SessionLocal() as session:
-        if session.query(PriceRecord).count() > 0:
-            # DB has data, just run sentiment enrichment
+        count = session.query(PriceRecord).count()
+        print(f"DB has {count} price records")
+        if count > 0:
             try:
                 from scripts.enrich_sentiment import main as enrich
-                enrich()
+                n = enrich()
+                print(f"Enriched {n} news items")
             except Exception as e:
                 print(f"Enrich failed: {e}")
             return
@@ -22,7 +24,8 @@ def bootstrap_data():
                 ingest_news(t)
             except Exception as e:
                 print(f"Warning: could not fetch {t}: {e}")
-        enrich()
+        n = enrich()
+        print(f"Enriched {n} news items")
     except Exception as e:
         print(f"Bootstrap failed: {e}")
     print("Bootstrap termine.")
