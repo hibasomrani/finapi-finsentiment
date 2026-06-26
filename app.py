@@ -1,5 +1,5 @@
 """Application Flask exposant les endpoints de prix."""
-
+import logging
 from flask import Flask, jsonify, request
 
 from prices import (
@@ -9,6 +9,9 @@ from prices import (
 )
 from db import SessionLocal, init_db
 from models import PriceRecord, NewsItem
+from sentiment import analyze, analyze_batch
+
+log = logging.getLogger(__name__)
 
 
 def create_app() -> Flask:
@@ -66,7 +69,6 @@ def create_app() -> Flask:
 
     @app.get("/db/prices/<ticker>")
     def db_prices(ticker: str):
-        """Lit les prix stockes pour un ticker (les plus recents en premier)."""
         with SessionLocal() as session:
             rows = (
                 session.query(PriceRecord)
@@ -86,7 +88,6 @@ def create_app() -> Flask:
 
     @app.get("/db/news/<ticker>")
     def db_news(ticker: str):
-        """Lit les news stockees pour un ticker."""
         with SessionLocal() as session:
             rows = (
                 session.query(NewsItem)
@@ -107,6 +108,74 @@ def create_app() -> Flask:
                 }
                 for r in rows
             ],
+        })
+
+    @app.post("/sentiment")
+    def sentiment():
+        payload = request.get_json(silent=True) or {}
+        text = payload.get("text")
+        if not text:
+            return jsonify({
+                "error": "Champ 'text' manquant dans le body JSON",
+                "code": 400,
+            }), 400
+        try:
+            result = analyze(text)
+        except ValueError as e:
+            return jsonify({"error": str(e), "code": 400}), 400
+        except Exception:
+            log.exception("Erreur dans /sentiment")
+            return jsonify({"error": "Erreur interne", "code": 500}), 500
+        return jsonify({
+            "label": result.label,
+            "score": result.score,
+            "text_preview": result.text_preview,
+        })
+
+    @app.post("/sentiment/batch")
+    def sentiment_batch():
+        payload = request.get_json(silent=True) or {}
+        texts = payload.get("texts")
+        if not isinstance(texts, list) or not texts:
+            return jsonify({
+                "error": "Champ 'texts' (liste non vide) requis",
+                "code": 400,
+            }), 400
+        if len(texts) > 100:
+            return jsonify({
+                "error": "Maximum 100 textes par requete",
+                "code": 400,
+            }), 400
+        try:
+            results = analyze_batch(texts)
+        except Exception:
+            log.exception("Erreur dans /sentiment/batch")
+            return jsonify({"error": "Erreur interne", "code": 500}), 500
+        return jsonify({
+            "count": len(results),
+            "results": [
+                {"label": r.label, "score": r.score, "text_preview": r.text_preview}
+                for r in results
+            ],
+        })
+
+    @app.get("/db/sentiment-summary/<ticker>")
+    def sentiment_summary(ticker: str):
+        from sqlalchemy import func
+        with SessionLocal() as session:
+            rows = (
+                session.query(
+                    NewsItem.sentiment_label,
+                    func.count(NewsItem.id),
+                )
+                .filter(NewsItem.ticker == ticker.upper())
+                .filter(NewsItem.sentiment_label.isnot(None))
+                .group_by(NewsItem.sentiment_label)
+                .all()
+            )
+        return jsonify({
+            "ticker": ticker.upper(),
+            "distribution": {label: count for label, count in rows},
         })
 
     return app
