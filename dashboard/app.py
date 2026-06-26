@@ -1,8 +1,10 @@
 """Dashboard interactif d'analyse de sentiment financier."""
+
 from datetime import datetime
-import streamlit as st
+
 import api_client as api
-from charts import price_line_chart, sentiment_pie_chart, SENT_COLORS
+import streamlit as st
+from charts import SENT_COLORS, price_line_chart, sentiment_pie_chart
 
 # -------- Configuration de la page --------
 st.set_page_config(

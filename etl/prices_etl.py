@@ -1,8 +1,10 @@
 """ETL des prix : Extract via yfinance, Load dans SQLite."""
+
 import logging
-from datetime import datetime
+
 import yfinance as yf
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+
 from db import SessionLocal
 from models import PriceRecord
 
@@ -27,9 +29,7 @@ def ingest_prices(ticker: str, period: str = "1mo") -> int:
     ]
     with SessionLocal() as session:
         stmt = sqlite_insert(PriceRecord).values(rows)
-        stmt = stmt.on_conflict_do_nothing(
-            index_elements=["ticker", "date"]
-        )
+        stmt = stmt.on_conflict_do_nothing(index_elements=["ticker", "date"])
         result = session.execute(stmt)
         session.commit()
         inserted = result.rowcount or 0

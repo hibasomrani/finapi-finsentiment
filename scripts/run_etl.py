@@ -1,21 +1,21 @@
 """Script principal d'ingestion. Usage:
 python scripts/run_etl.py AAPL MSFT GOOGL
 """
+
 import logging
-import sys
 import os
+import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from db import init_db
-from etl.prices_etl import ingest_prices
 from etl.news_etl import ingest_news
+from etl.prices_etl import ingest_prices
 
 
 def main(tickers: list) -> None:
     logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
     )
     init_db()
     for t in tickers:

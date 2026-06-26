@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass
 from datetime import date
-from typing import List
+
 import yfinance as yf
 
 
@@ -25,9 +25,7 @@ def get_latest_price(ticker: str) -> LatestPrice:
     history = yf_ticker.history(period="5d", auto_adjust=False)
 
     if history.empty:
-        raise TickerNotFoundError(
-            f"Ticker '{ticker}' introuvable"
-        )
+        raise TickerNotFoundError(f"Ticker '{ticker}' introuvable")
 
     last_row = history.iloc[-1]
     last_date = history.index[-1].date()
@@ -43,13 +41,15 @@ def get_latest_price(ticker: str) -> LatestPrice:
         close=round(float(last_row["Close"]), 2),
         currency=currency.upper(),
     )
+
+
 @dataclass
 class PricePoint:
     date: date
     close: float
 
 
-def get_history(ticker: str, days: int) -> List[PricePoint]:
+def get_history(ticker: str, days: int) -> list[PricePoint]:
     """Renvoie l’historique des cours de cloture sur N jours."""
 
     period = f"{max(days, 1)}d"
@@ -59,9 +59,6 @@ def get_history(ticker: str, days: int) -> List[PricePoint]:
         raise TickerNotFoundError(f"Ticker '{ticker}' introuvable")
 
     return [
-        PricePoint(
-            date=ts.date(),
-            close=round(float(close), 2)
-        )
+        PricePoint(date=ts.date(), close=round(float(close), 2))
         for ts, close in history["Close"].items()
     ]
